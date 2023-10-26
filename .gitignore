@@ -1,0 +1,4 @@
+/.pytest_cache
+pydocspell.egg-info
+__pycache__
+.*.sw?

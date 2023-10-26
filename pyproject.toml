@@ -1,0 +1,60 @@
+[build-system]
+requires = [
+  "setuptools",
+  "setuptools_scm",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydocspell"
+authors = [
+  {name = "martin f. krafft", email="pydocspell@pobox.madduck.net"}
+]
+description = "API wrapper for the Docspell DMS"
+keywords = ["Docspell", "DMS", "API", "wrapper"]
+license = {text="MIT"}
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = [
+  "requests",
+  "requests_toolbelt",
+  "attrs",
+]
+dynamic = ["version", "readme"]
+
+[project.optional-dependencies]
+dev = [
+  "flake8<3.8",
+  "black"
+]
+test = [
+  "pytest",
+  "pytest-flake8<1.1",
+  "pytest-describe",
+  "expecter",
+  "sniffer",
+  "pyinotify",
+  "requests-mock"
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "pydocspell.VERSION"}
+readme = {file = ["README.md"]}
+
+[tool.black]
+line-length = 79
+
+[tool.pytest.ini_options]
+markers = [
+  'construct: testing the constructor',
+  'context: testing the context manager',
+  'util: testing utility functions',
+  'api_generic: testing generic API stuff',
+  'api_auth: testing API stuff related to authentication',
+  'api_files: testing API stuff related to files',
+  'wip: tests being currently worked on',
+]
