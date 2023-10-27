@@ -56,5 +56,6 @@ markers = [
   'api_generic: testing generic API stuff',
   'api_auth: testing API stuff related to authentication',
   'api_files: testing API stuff related to files',
+  'api_addons: testing API stuff related to addons',
   'wip: tests being currently worked on',
 ]

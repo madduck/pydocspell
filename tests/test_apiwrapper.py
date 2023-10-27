@@ -3,6 +3,7 @@ from expecter import expect
 import requests_mock
 import functools
 import os
+import re
 from io import BytesIO
 from collections import OrderedDict
 import hashlib
@@ -204,7 +205,6 @@ def describe_api_upload():
             resp = api.upload_via_source("source", *fnt)
             assert resp == fnt
 
-    @pytest.mark.wip
     @mock_me(
         "POST",
         "open/upload/item/{source}",
@@ -256,8 +256,6 @@ def describe_api_upload():
     )
     def check_if_file_exists(params, returns, authenticated_api, onepixelfile):
         api, _ = authenticated_api
-        import ipdb
-
         resp = api.check_file_exists(params["sha256sum"])
         expect(resp["exists"]) is returns["exists"]
         for inp, out in zip(
@@ -318,7 +316,6 @@ def describe_api_upload():
             resp = api.upload(*fnt)
             assert resp == fnt
 
-    @pytest.mark.wip
     @mock_me(
         "POST",
         "sec/upload/item",
@@ -329,4 +326,18 @@ def describe_api_upload():
         files = [(onepixelfile, "one"), (onepixelfile, "two")]
         resp = api.upload_multiple(files)
         expect(resp["success"]) is returns["success"]
-        expect(resp["message"]) == returns["message"]
+
+@pytest.mark.api_addons
+def describe_api_addons():
+
+    @mock_me(
+        "PUT",
+        "sec/addon/archive/{id}",
+        params={'id': '89uniB21tj9-HwWaVk3gsvW-87FpJ9dGWS6-Kw9DQnvDr3W'},
+        returns={"success": True, "message": r"Addon updated: .+"},
+    )
+    def addon_update(params, returns, authenticated_api):
+        api, _ = authenticated_api
+        resp = api.addon_update(params['id'])
+        expect(resp["success"]) is returns["success"]
+        expect(re.match(returns['message'], resp["message"])) is not None

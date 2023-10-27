@@ -278,3 +278,9 @@ class APIWrapper:
         if resp.status_code == requests.codes.forbidden:
             self._handle_forbidden("Getting the job queue")
         return resp.json()
+
+    def addon_update(self, addon_id):
+        resp = self._request("PUT", f"sec/addon/archive/{addon_id}")
+        if resp.status_code == requests.codes.forbidden:
+            self._handle_forbidden(f"Updating addon {addon_id}")
+        return resp.json()
