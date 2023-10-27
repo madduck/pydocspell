@@ -285,4 +285,7 @@ class APIWrapper:
         )
         if resp.status_code == requests.codes.forbidden:
             self._handle_forbidden(f"Updating addon {addon_id}")
+        json = resp.json()
+        if 'message' in json:
+            logger.info(json['message'])
         return resp.json()
