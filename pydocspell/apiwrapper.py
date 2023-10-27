@@ -7,7 +7,6 @@ import enum
 from .metadata import UploadMetadata
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 
 class APIWrapper:
