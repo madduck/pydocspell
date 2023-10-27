@@ -115,6 +115,7 @@ class APIWrapper:
         endpoint,
         *,
         apiurl=None,
+        params=None,
         json=None,
         data=None,
         files=None,
@@ -133,6 +134,7 @@ class APIWrapper:
         resp = self._session.request(
             method,
             url,
+            params=params,
             json=json,
             files=files,
             data=data,
@@ -224,9 +226,7 @@ class APIWrapper:
             metadata=metadata,
         )
 
-    def upload(
-        self, fileobj, name=None, *, transfer_cb=None, metadata=None
-    ):
+    def upload(self, fileobj, name=None, *, transfer_cb=None, metadata=None):
         return self._upload_single(
             "sec/upload/item",
             fileobj,
@@ -279,8 +279,10 @@ class APIWrapper:
             self._handle_forbidden("Getting the job queue")
         return resp.json()
 
-    def addon_update(self, addon_id):
-        resp = self._request("PUT", f"sec/addon/archive/{addon_id}")
+    def addon_update(self, addon_id, *, sync=False):
+        resp = self._request(
+            "PUT", f"sec/addon/archive/{addon_id}", params={"sync": sync}
+        )
         if resp.status_code == requests.codes.forbidden:
             self._handle_forbidden(f"Updating addon {addon_id}")
         return resp.json()

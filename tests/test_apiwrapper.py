@@ -334,10 +334,22 @@ def describe_api_addons():
         "PUT",
         "sec/addon/archive/{id}",
         params={'id': '89uniB21tj9-HwWaVk3gsvW-87FpJ9dGWS6-Kw9DQnvDr3W'},
-        returns={"success": True, "message": r"Addon updated: .+"},
+        returns={"success": True, "message": "Addon updated in background"},
     )
     def addon_update(params, returns, authenticated_api):
         api, _ = authenticated_api
         resp = api.addon_update(params['id'])
+        expect(resp["success"]) is returns["success"]
+        expect(resp["message"]) is returns["message"]
+
+    @mock_me(
+        "PUT",
+        "sec/addon/archive/{id}",
+        params={'id': '89uniB21tj9-HwWaVk3gsvW-87FpJ9dGWS6-Kw9DQnvDr3W'},
+        returns={"success": True, "message": r"Addon updated: .+"},
+    )
+    def addon_update_sync(params, returns, authenticated_api):
+        api, _ = authenticated_api
+        resp = api.addon_update(params['id'], sync=True)
         expect(resp["success"]) is returns["success"]
         expect(re.match(returns['message'], resp["message"])) is not None
