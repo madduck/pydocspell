@@ -72,6 +72,7 @@ class APIWrapper:
             KeyboardInterrupt,
             bdb.BdbQuit,
         ):
+            logger.exception("Caught exception on exit of APIWrapper context")
             try:
                 import ipdb
 
