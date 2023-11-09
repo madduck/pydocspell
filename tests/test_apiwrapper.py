@@ -8,6 +8,7 @@ from io import BytesIO
 from collections import OrderedDict
 import hashlib
 from operator import itemgetter
+import datetime
 
 from pydocspell import APIWrapper
 
@@ -325,6 +326,20 @@ def describe_api_upload():
         api, _ = authenticated_api
         files = [(onepixelfile, "one"), (onepixelfile, "two")]
         resp = api.upload_multiple(files)
+        expect(resp["success"]) is returns["success"]
+
+@pytest.mark.api_metadata
+def describe_api_metadata():
+    @mock_me(
+        "PUT",
+        "sec/item/{id}/date",
+        params={"id": "7DRnuarqeVc-9QTFof7pocU-VSsreZ2k5oh-zebbFYMnwRQ"},
+        returns={"success": True, "message": "Item date updated."},
+    )
+    def set_item_date(params, returns, authenticated_api):
+        api, _ = authenticated_api
+        date = datetime.date(1970,1,1)
+        resp = api.set_item_date(params['id'], date)
         expect(resp["success"]) is returns["success"]
 
 @pytest.mark.api_addons

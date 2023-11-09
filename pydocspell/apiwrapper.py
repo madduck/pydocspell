@@ -3,6 +3,7 @@ from requests_toolbelt.multipart import encoder
 import logging
 import re
 import enum
+import datetime
 
 from .metadata import UploadMetadata
 
@@ -270,6 +271,14 @@ class APIWrapper:
                 "but the the file could exist, see "
                 "https://github.com/eikek/docspell/issues/2328"
             )
+        return resp.json()
+
+    def set_item_date(self, itemid, date):
+        date = datetime.datetime(date.year, date.month, date.day, 12, 0, 0)
+        timestamp = int(date.strftime('%s000'))
+        resp = self._request("PUT", f"sec/item/{itemid}/date", json={"date": timestamp})
+        if resp.status_code == requests.codes.forbidden:
+            self._handle_forbidden("Setting item date")
         return resp.json()
 
     def get_job_queue(self):
