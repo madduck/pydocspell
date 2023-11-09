@@ -342,6 +342,39 @@ def describe_api_metadata():
         resp = api.set_item_date(params['id'], date)
         expect(resp["success"]) is returns["success"]
 
+    @mock_me(
+        "POST",
+        "sec/item/{id}/confirm",
+        params={"id": "7DRnuarqeVc-9QTFof7pocU-VSsreZ2k5oh-zebbFYMnwRQ"},
+        returns={"success": True, "message": "Item data confirmed"},
+    )
+    def confirm_item(params, returns, authenticated_api):
+        api, _ = authenticated_api
+        resp = api.confirm_item(params['id'])
+        expect(resp["success"]) is returns["success"]
+
+    @mock_me(
+        "POST",
+        "sec/item/{id}/unconfirm",
+        params={"id": "7DRnuarqeVc-9QTFof7pocU-VSsreZ2k5oh-zebbFYMnwRQ"},
+        returns={"success": True, "message": "Item back to created"},
+    )
+    def unconfirm_item(params, returns, authenticated_api):
+        api, _ = authenticated_api
+        resp = api.unconfirm_item(params['id'])
+        expect(resp["success"]) is returns["success"]
+
+    @mock_me(
+        "POST",
+        "sec/item/{id}/unconfirm",
+        params={"id": "7DRnuarqeVc-9QTFof7pocU-VSsreZ2k5oh-zebbFYMnwRQ"},
+        returns={"success": True, "message": "Item back to created"},
+    )
+    def unconfirm_item_arg(params, returns, authenticated_api):
+        api, _ = authenticated_api
+        resp = api.confirm_item(params['id'], confirm=False)
+        expect(resp["success"]) is returns["success"]
+
 @pytest.mark.api_addons
 def describe_api_addons():
 

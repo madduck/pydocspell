@@ -281,6 +281,16 @@ class APIWrapper:
             self._handle_forbidden("Setting item date")
         return resp.json()
 
+    def confirm_item(self, itemid, *, confirm=True):
+        action = "confirm" if confirm else "unconfirm"
+        resp = self._request("POST", f"sec/item/{itemid}/{action}")
+        if resp.status_code == requests.codes.forbidden:
+            self._handle_forbidden(f"{action.capitalize()}ing item")
+        return resp.json()
+
+    def unconfirm_item(self, itemid):
+        return self.confirm_item(itemid, confirm=False)
+
     def get_job_queue(self):
         resp = self._request("GET", "sec/queue/state")
         if resp.status_code == requests.codes.forbidden:
