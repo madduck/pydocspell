@@ -36,6 +36,15 @@ class APIWrapper:
     class NotAuthorized(Exception):
         pass
 
+    class EmptyResponse(Exception):
+        def __init__(self, status_code):
+            self._status_code = status_code
+
+        status_code = property(lambda s: s._status_code)
+
+        def str(self):
+            return f"Empty response, status code {self._status_code}"
+
     def __init__(
         self,
         baseurl,
@@ -157,18 +166,23 @@ class APIWrapper:
             timeout=self._timeout,
             **kwargs,
         )
+
+        if resp.status_code == requests.codes.forbidden:
+            activity = f"{method} {url}"
+            if self.state != APIWrapper.State.LOGGEDIN:
+                raise APIWrapper.NotAuthenticated(activity)
+            raise APIWrapper.NotAuthorized(activity)
+
         try:
             json = resp.json()
-            if "token" in json:
-                json["token"] = "XXX"
+            logger.debug(f"< {resp.status_code} {json=}")
+            return json
         except requests.exceptions.JSONDecodeError:
-            json = {}
-        logger.debug(f"< {resp.status_code} {json=}")
-        return resp
+            raise APIWrapper.EmptyResponse(resp.status_code)
 
     def get_docspell_version(self):
         resp = self._request("GET", "api/info/version", apiurl=self.baseurl)
-        return resp.json()
+        return resp
 
     def login(self, collective, username, password, rememberme=True):
         data = {
@@ -177,11 +191,10 @@ class APIWrapper:
             "rememberMe": rememberme,
         }
         resp = self._request("POST", "open/auth/login", json=data)
-        if resp.status_code == requests.codes.ok:
-            self._state = APIWrapper.State.LOGGEDIN
-            self._state.set_info(f"user={collective}/{username}")
-            logger.info(f"Logged in as {collective}/{username}")
-        return resp.json()
+        self._state = APIWrapper.State.LOGGEDIN
+        self._state.set_info(f"user={collective}/{username}")
+        logger.info(f"Logged in as {collective}/{username}")
+        return resp
 
     def logout(self):
         if self.state == APIWrapper.State.LOGGEDIN:
@@ -215,7 +228,7 @@ class APIWrapper:
             data=enc,
             headers={"Content-Type": enc.content_type},
         )
-        return resp.json()
+        return resp
 
     def _upload_single(
         self, endpoint, fileobj, name=None, *, transfer_cb=None, metadata=None
@@ -273,54 +286,40 @@ class APIWrapper:
             metadata=metadata,
         )
 
-    def _handle_forbidden(self, activity):
-        if self.state != APIWrapper.State.LOGGEDIN:
-            raise APIWrapper.NotAuthenticated(activity)
-        raise APIWrapper.NotAuthorized(activity)
-
     def check_file_exists(self, sha256sum):
         resp = self._request("GET", f"sec/checkfile/{sha256sum}")
-        if resp.status_code == requests.codes.forbidden:
-            self._handle_forbidden("Checking for file existence")
-        if resp.json().get("exists") is False:
+        if resp.get("exists") is False:
             logger.warning(
                 f"Docspell says no file with SHA256 {sha256sum}, "
                 "but the the file could exist, see "
                 "https://github.com/eikek/docspell/issues/2328"
             )
-        return resp.json()
+        return resp
 
     def set_item_date(self, itemid, date):
         date = datetime.datetime(date.year, date.month, date.day, 12, 0, 0)
-        timestamp = int(date.strftime('%s000'))
-        resp = self._request("PUT", f"sec/item/{itemid}/date", json={"date": timestamp})
-        if resp.status_code == requests.codes.forbidden:
-            self._handle_forbidden("Setting item date")
-        return resp.json()
+        timestamp = int(date.strftime("%s000"))
+        resp = self._request(
+            "PUT", f"sec/item/{itemid}/date", json={"date": timestamp}
+        )
+        return resp
 
     def confirm_item(self, itemid, *, confirm=True):
         action = "confirm" if confirm else "unconfirm"
         resp = self._request("POST", f"sec/item/{itemid}/{action}")
-        if resp.status_code == requests.codes.forbidden:
-            self._handle_forbidden(f"{action.capitalize()}ing item")
-        return resp.json()
+        return resp
 
     def unconfirm_item(self, itemid):
         return self.confirm_item(itemid, confirm=False)
 
     def get_job_queue(self):
         resp = self._request("GET", "sec/queue/state")
-        if resp.status_code == requests.codes.forbidden:
-            self._handle_forbidden("Getting the job queue")
-        return resp.json()
+        return resp
 
     def addon_update(self, addon_id, *, sync=False):
         resp = self._request(
             "PUT", f"sec/addon/archive/{addon_id}", params={"sync": sync}
         )
-        if resp.status_code == requests.codes.forbidden:
-            self._handle_forbidden(f"Updating addon {addon_id}")
-        json = resp.json()
-        if 'message' in json:
-            logger.info(json['message'])
-        return resp.json()
+        if "message" in resp:
+            logger.info(resp["message"])
+        return resp

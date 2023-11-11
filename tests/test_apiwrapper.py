@@ -4,6 +4,7 @@ import requests_mock
 import functools
 import os
 import re
+import json
 from io import BytesIO
 from collections import OrderedDict
 import hashlib
@@ -20,8 +21,20 @@ BASEURL = os.getenv("DOCSPELL_BASEURL", MOCK_BASEURL)
 I_AM_BEING_MOCKED = BASEURL == MOCK_BASEURL
 
 
-def mock_me(method, endpoint, *, apiurl=None, params=None, returns=None):
+def mock_me(
+    method,
+    endpoint,
+    *,
+    apiurl=None,
+    params=None,
+    returns=None,
+    returns_fn=None,
+):
     returns = returns or {}
+
+    if not callable(returns_fn):
+        returns_fn = json.dumps
+
     params = params or {}
     if not I_AM_BEING_MOCKED and "token" in returns:
         returns["token"] = MOCK_ANYTHING
@@ -37,7 +50,7 @@ def mock_me(method, endpoint, *, apiurl=None, params=None, returns=None):
                         APIWrapper.make_endpoint_url(
                             BASEURL, endpoint, apiurl=apiurl
                         ).format(**(params or {})),
-                        json=returns,
+                        text=returns_fn(returns),
                     )
                     return fn(params, returns, *args, **kwargs)
             else:
@@ -154,6 +167,20 @@ def describe_open_api():
     )
     def get_docspell_version(params, returns, api):
         expect(api.get_docspell_version().get("version")) == returns["version"]
+
+@pytest.mark.api_generic
+def describe_error_handling():
+    @mock_me(
+        "GET",
+        "api/info/version",
+        apiurl=BASEURL,
+        returns_fn=lambda s: "",
+    )
+    def when_empty_response_received(
+        params, returns, api
+    ):
+        with pytest.raises(APIWrapper.EmptyResponse):
+            api.get_docspell_version().get("version")
 
 
 @pytest.mark.api_auth
@@ -322,11 +349,14 @@ def describe_api_upload():
         "sec/upload/item",
         returns={"success": True, "message": "Files submitted."},
     )
-    def multiple_authenticated(params, returns, authenticated_api, onepixelfile):
+    def multiple_authenticated(
+        params, returns, authenticated_api, onepixelfile
+    ):
         api, _ = authenticated_api
         files = [(onepixelfile, "one"), (onepixelfile, "two")]
         resp = api.upload_multiple(files)
         expect(resp["success"]) is returns["success"]
+
 
 @pytest.mark.api_metadata
 def describe_api_metadata():
@@ -338,8 +368,8 @@ def describe_api_metadata():
     )
     def set_item_date(params, returns, authenticated_api):
         api, _ = authenticated_api
-        date = datetime.date(1970,1,1)
-        resp = api.set_item_date(params['id'], date)
+        date = datetime.date(1970, 1, 1)
+        resp = api.set_item_date(params["id"], date)
         expect(resp["success"]) is returns["success"]
 
     @mock_me(
@@ -350,7 +380,7 @@ def describe_api_metadata():
     )
     def confirm_item(params, returns, authenticated_api):
         api, _ = authenticated_api
-        resp = api.confirm_item(params['id'])
+        resp = api.confirm_item(params["id"])
         expect(resp["success"]) is returns["success"]
 
     @mock_me(
@@ -361,7 +391,7 @@ def describe_api_metadata():
     )
     def unconfirm_item(params, returns, authenticated_api):
         api, _ = authenticated_api
-        resp = api.unconfirm_item(params['id'])
+        resp = api.unconfirm_item(params["id"])
         expect(resp["success"]) is returns["success"]
 
     @mock_me(
@@ -372,32 +402,32 @@ def describe_api_metadata():
     )
     def unconfirm_item_arg(params, returns, authenticated_api):
         api, _ = authenticated_api
-        resp = api.confirm_item(params['id'], confirm=False)
+        resp = api.confirm_item(params["id"], confirm=False)
         expect(resp["success"]) is returns["success"]
+
 
 @pytest.mark.api_addons
 def describe_api_addons():
-
     @mock_me(
         "PUT",
         "sec/addon/archive/{id}",
-        params={'id': '89uniB21tj9-HwWaVk3gsvW-87FpJ9dGWS6-Kw9DQnvDr3W'},
+        params={"id": "89uniB21tj9-HwWaVk3gsvW-87FpJ9dGWS6-Kw9DQnvDr3W"},
         returns={"success": True, "message": "Addon updated in background"},
     )
     def addon_update(params, returns, authenticated_api):
         api, _ = authenticated_api
-        resp = api.addon_update(params['id'])
+        resp = api.addon_update(params["id"])
         expect(resp["success"]) is returns["success"]
         expect(resp["message"]) is returns["message"]
 
     @mock_me(
         "PUT",
         "sec/addon/archive/{id}",
-        params={'id': '89uniB21tj9-HwWaVk3gsvW-87FpJ9dGWS6-Kw9DQnvDr3W'},
+        params={"id": "89uniB21tj9-HwWaVk3gsvW-87FpJ9dGWS6-Kw9DQnvDr3W"},
         returns={"success": True, "message": r"Addon updated: .+"},
     )
     def addon_update_sync(params, returns, authenticated_api):
         api, _ = authenticated_api
-        resp = api.addon_update(params['id'], sync=True)
+        resp = api.addon_update(params["id"], sync=True)
         expect(resp["success"]) is returns["success"]
-        expect(re.match(returns['message'], resp["message"])) is not None
+        expect(re.match(returns["message"], resp["message"])) is not None
