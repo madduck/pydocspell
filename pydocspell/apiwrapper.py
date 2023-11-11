@@ -1,4 +1,5 @@
 import requests
+from requests.adapters import HTTPAdapter, Retry
 from requests_toolbelt.multipart import encoder
 import logging
 import re
@@ -40,6 +41,7 @@ class APIWrapper:
         baseurl,
         *,
         session=None,
+        retries=None,
         timeout=(3.05, 12),
         version=DEFAULT_VERSION,
         debug=True,
@@ -62,6 +64,12 @@ class APIWrapper:
             self._apiurl = APIWrapper.make_api_url(baseurl)
 
             f"{baseurl}{APIWrapper.DEFAULT_API_PATH}".format(version=version)
+
+        retries = retries or Retry(
+            total=5, backoff_factor=1, status_forcelist=[502, 503, 504]
+        )
+        http_adapter = HTTPAdapter(max_retries=retries)
+        self._session.mount(self._baseurl, http_adapter)
 
     version = property(lambda s: s._version)
     baseurl = property(lambda s: s._baseurl)
