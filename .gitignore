@@ -2,3 +2,4 @@
 pydocspell.egg-info
 __pycache__
 .*.sw?
+/.direnv
