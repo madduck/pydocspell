@@ -36,9 +36,16 @@ class APIWrapper:
         pass
 
     def __init__(
-        self, baseurl, *, session=None, version=DEFAULT_VERSION, debug=True
+        self,
+        baseurl,
+        *,
+        session=None,
+        timeout=(3.05, 12),
+        version=DEFAULT_VERSION,
+        debug=True,
     ):
         self._session = session or requests.Session()
+        self._timeout = timeout
         self._baseurl = baseurl.strip("/")
         self._state = APIWrapper.State.INIT
         self._debug = debug
@@ -139,6 +146,7 @@ class APIWrapper:
             json=json,
             files=files,
             data=data,
+            timeout=self._timeout,
             **kwargs,
         )
         try:
