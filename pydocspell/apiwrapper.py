@@ -198,7 +198,11 @@ class APIWrapper:
 
     def logout(self):
         if self.state == APIWrapper.State.LOGGEDIN:
-            self._request("POST", "sec/auth/logout")
+            try:
+                self._request("POST", "sec/auth/logout")
+            except APIWrapper.EmptyResponse as e:
+                if e.status_code != 200:
+                    raise
             self._state = APIWrapper.State.LOGGEDOUT
             logger.info("Logged out")
         return {}
