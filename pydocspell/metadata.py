@@ -12,6 +12,7 @@ class UploadMetadata:
     language: (str, type(None)) = None
     attachmentsOnly: bool = False
     flattenArchives: bool = False
+    customData: (dict, type(None)) = None
 
     def as_dict(self):
         d = asdict(self)

@@ -26,6 +26,12 @@ def describe_dataclass():
         d = md.as_dict()
         assert "multiple" in d
 
+    def custom_data():
+        answer = 42
+        md = UploadMetadata(customData=dict(answer=answer))
+        d = md.as_dict()
+        expect(d['customData']['answer']) == answer
+
 def describe_docspell_metadata():
     def tags_is_a_nested_string_list():
         tags = ['one', 'two']
