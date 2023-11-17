@@ -23,6 +23,7 @@ dependencies = [
   "requests",
   "requests_toolbelt",
   "attrs",
+  "base58",
 ]
 dynamic = ["version", "readme"]
 
